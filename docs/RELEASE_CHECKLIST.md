@@ -9,7 +9,8 @@ A feature is included only if it removes a documented obstacle within that loop.
 - [x] PHP code syntax check across src/ and tests/ (PHP 8.4.25).
 - [x] PHPUnit: 57 passing tests / 289 assertions, including severity filtering, correlation, redaction, store, CLI, and PDCA verification.
 - [x] Composer manifest validated, lock synced locally (package itself does not ship a lock file).
-- [x] No GitHub Actions or CI added.
+- [x] Minimal read-only GitHub Actions workflow added for public contributions (PHP 8.2 / Symfony 7.4; PHP 8.4 / Symfony 8.1).
+- [ ] Confirm the public workflow runs successfully on GitHub after this commit is pushed.
 - [x] Private storage has bounded input, validated IDs, per-case locks and atomic writes.
 - [x] Existing application business logic is not modified by the package.
 - [x] Sensitive data redaction applied to UI and CLI; caveat clearly documented.

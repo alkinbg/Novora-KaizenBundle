@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose a focused improvement that removes measurable wasted work
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        KaizenBundle intentionally stays small. Please begin with the problem, not the feature.
+  - type: textarea
+    id: muda
+    attributes:
+      label: What wasted work (Muda) are you trying to eliminate?
+      description: What currently takes unnecessary steps or repeatedly interrupts your workflow?
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: How would you know the improvement helped?
+      description: Give a simple observable success criterion without promising unmeasured savings.
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Simplest approach
+      description: Could this be achieved within the existing Pareto → Investigate → PDCA workflow?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and trade-offs
+      description: What could we remove or simplify instead of adding functionality?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked for similar issues or requests.
+          required: true
+        - label: This proposal addresses a concrete problem rather than adding a dashboard or metric for its own sake.
+          required: true

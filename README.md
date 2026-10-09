@@ -164,4 +164,10 @@ vendor/bin/phpunit
 find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
 ~~~
 
-No GitHub Actions or CI is configured. Local test commands and release acceptance criteria are documented in [Release checklist](docs/RELEASE_CHECKLIST.md).
+Pull requests and main are validated by the small [PHP 8.2 / PHP 8.4 CI matrix](.github/workflows/ci.yml) using the corresponding Symfony 7.4 / 8.1 dependency branches.
+
+## Community
+
+We welcome focused contributions that remove waste without adding unnecessary complexity. See [Contributing](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md), and [Support](SUPPORT.md). For private vulnerability reports use [Security Policy](SECURITY.md); for interface barriers consult [Accessibility](ACCESSIBILITY.md). Issue and pull request templates are provided in the .github directory.
+
+All published code is available under the [MIT License](LICENSE).

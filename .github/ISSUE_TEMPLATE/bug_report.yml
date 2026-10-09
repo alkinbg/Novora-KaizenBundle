@@ -1,0 +1,83 @@
+name: Bug report
+description: Report a reproducible issue in Novora KaizenBundle
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Use only synthetic or fully redacted diagnostic data.
+        Do not disclose security vulnerabilities here; follow SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Bundle version or commit
+      placeholder: "v1.0.0 or full commit SHA"
+    validations:
+      required: true
+  - type: input
+    id: php
+    attributes:
+      label: PHP version
+      placeholder: "8.2.x or 8.4.x"
+    validations:
+      required: true
+  - type: input
+    id: symfony
+    attributes:
+      label: Symfony version
+      placeholder: "7.4.x or 8.1.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Installation / configuration
+        - Log reader / CLI
+        - Pareto / dashboard
+        - Execution correlation / timeline
+        - Investigation / Ishikawa / PDCA
+        - Storage / permissions
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Supply minimal configuration and synthetic log events when applicable.
+      placeholder: |
+        1. Configure the log source...
+        2. Trigger an event...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Provide only sanitized logs; no credentials, user identifiers, or production secrets.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked for duplicate issues.
+          required: true
+        - label: I removed sensitive details from the reproduction.
+          required: true

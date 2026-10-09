@@ -11,6 +11,11 @@ application's responsibility to protect operational data.
   HTTP-accessible directory.
 - The application does not send telemetry to third-party services.
 
-For suspected security vulnerabilities, avoid opening a public issue with
-exploitable details or secrets. Contact the repository maintainer privately,
-or use GitHub private vulnerability reporting if enabled.
+For suspected security vulnerabilities, **do not open a public issue** with
+exploit details or credentials. Contact the maintainer privately at
+**alkinbg@gmail.com**, or use GitHub's [private vulnerability reporting](https://github.com/alkinbg/Novora-KaizenBundle/security/advisories/new)
+if it is enabled for this repository.
+
+Include the affected version, impact and minimal sanitized reproduction.
+No guaranteed response time is promised. Supported release line: **1.x**
+after the first tagged stable release.

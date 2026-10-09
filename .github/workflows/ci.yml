@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} / Symfony ${{ matrix.symfony }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '8.2'
+            symfony: '7.4'
+          - php: '8.4'
+            symfony: '8.1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Confirm Symfony compatibility
+        run: |
+          php -r 'require "vendor/autoload.php"; $version = Composer\InstalledVersions::getPrettyVersion("symfony/framework-bundle"); if (!str_starts_with(ltrim((string) $version, "v"), $argv[1].".")) {fwrite(STDERR, "Unexpected Symfony version: ".$version.PHP_EOL); exit(1);}' "${{ matrix.symfony }}"
+
+      - name: Validate Composer package
+        run: composer validate --strict --no-check-publish
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
+
+      - name: Check PHP syntax
+        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l

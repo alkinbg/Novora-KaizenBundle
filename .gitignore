@@ -1,0 +1,6 @@
+/vendor/
+/.phpunit.cache/
+/.phpunit-watcher.yml
+/composer.lock
+/.idea/
+/var/

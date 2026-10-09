@@ -1,0 +1,160 @@
+{% extends '@NovoraKaizen/base.html.twig' %}
+{% block title %}{{ case.title }}{% endblock %}
+{% block body %}
+<div class="headline">
+ <div><div class="mini-head"><a href="{{ path('novora_kaizen_investigations') }}">← Improvements</a> / {{ case.id|slice(0,8) }}</div><h1>{{ case.title }}</h1><div class="muted">Created {{ case.created_at }} · Updated {{ case.updated_at }}</div></div>
+ <form method="post" action="{{ path('novora_kaizen_update', {id:case.id,action:'status'}) }}" class="form-line">
+   <input type="hidden" name="_token" value="{{ token }}"><div><label for="status">Status</label><select id="status" name="status">
+   {% for status in ['open','investigating','verifying','closed'] %}<option value="{{ status }}" {% if case.status == status %}selected{% endif %}>{{ status|capitalize }}</option>{% endfor %}
+   </select></div><button class="btn" type="submit">Update</button>
+ </form>
+</div>
+<div class="card"><span class="mini-head">A3 · Problem statement</span><p class="text-pre">{{ case.problem ?: 'No baseline or problem statement recorded yet.' }}</p>
+{% if case.fingerprint %}<div class="small muted">Linked log fingerprint: <code>{{ case.fingerprint|slice(0,20) }}…</code></div>{% endif %}</div>
+
+<div class="grid-2">
+ <section class="card">
+  <div class="section-head"><h2>1 · Gemba observations</h2><span class="pill">{{ case.gemba|length }} observations</span></div>
+  <p class="small muted">What did you observe in the real execution? Separate observation from interpretation.</p>
+  {% for entry in case.gemba %}<div class="record"><strong>{{ entry.observation }}</strong><p class="muted small">Evidence: {{ entry.evidence ?: 'Not yet provided' }}</p><span class="tiny muted">{{ entry.at }}</span></div>{% else %}<div class="empty">No direct observations yet.</div>{% endfor %}
+  <hr class="divider">
+  <form class="spaced" action="{{ path('novora_kaizen_update', {id:case.id,action:'gemba'}) }}" method="post">
+   <input type="hidden" name="_token" value="{{ token }}"><div><label for="observation">Observation</label><textarea id="observation" name="observation" required maxlength="4000" placeholder="What happened? Where? When?"></textarea></div>
+   <div><label for="gemba-evidence">Evidence / measurement</label><input id="gemba-evidence" name="evidence" maxlength="4000" placeholder="Timestamp, trace id, metric, link"></div>
+   <button class="btn btn-primary" type="submit">＋ Add observation</button>
+  </form>
+ </section>
+ <section class="card">
+  <div class="section-head"><h2>2 · Ishikawa hypotheses</h2><span class="pill">{{ case.causes|length }} causes</span></div>
+  <p class="small muted">Possible contributing causes are not automatically confirmed. Attach evidence before marking one as confirmed.</p>
+  <div style="margin:10px 0 18px;padding:10px 4px;overflow-x:auto">
+  <svg role="img" aria-label="Ishikawa fishbone showing six areas of possible causes" viewBox="0 0 520 195" style="width:100%;min-width:340px" xmlns="http://www.w3.org/2000/svg">
+   <g fill="none" stroke="#e0a46c" stroke-width="2" stroke-linecap="round">
+    <path d="M24 99 H440 M88 99 L54 44 M234 99 L200 44 M375 99 L341 44 M88 99 L54 155 M234 99 L200 155 M375 99 L341 155"/>
+    <path d="M440 99 l-12 -8 M440 99 l-12 8"/>
+   </g>
+   <g fill="#64748b" text-anchor="middle" font-size="12" font-family="sans-serif" font-weight="600">
+    <text x="55" y="30">Code</text><text x="200" y="30">Data</text><text x="341" y="30">Infrastructure</text>
+    <text x="55" y="173">Dependencies</text><text x="200" y="173">Process</text><text x="341" y="173">Configuration</text>
+   </g>
+   <rect x="442" y="80" width="76" height="39" fill="#fff0da" stroke="#e0a46c" rx="7"/>
+   <text x="480" y="96" text-anchor="middle" font-size="11" fill="#824a1b">Problem</text><text x="480" y="110" text-anchor="middle" font-size="10" fill="#824a1b">statement</text>
+   <g text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#824a1b">
+     {% for node in [
+       {x:54,y:48,category:'code'},
+       {x:200,y:48,category:'data'},
+       {x:341,y:48,category:'infrastructure'},
+       {x:54,y:151,category:'dependencies'},
+       {x:200,y:151,category:'process'},
+       {x:341,y:151,category:'configuration'}
+     ] %}
+       <circle cx="{{ node.x }}" cy="{{ node.y }}" r="11" fill="#fff0da" stroke="#e0a46c" stroke-width="1"/>
+       <text x="{{ node.x }}" y="{{ node.y + 4 }}">{{ case.causes|filter(cause => cause.category == node.category)|length }}</text>
+     {% endfor %}
+   </g>
+  </svg>
+  </div>
+  {% for cause in case.causes %}
+  <div class="record">
+   <div><span class="tag">{{ cause.category }}</span> <span class="tag {{ cause.assessment }}">{{ cause.assessment }}</span></div>
+   <strong style="display:block;margin-top:7px">{{ cause.hypothesis }}</strong>
+   <div class="small muted text-pre">{{ cause.evidence ?: 'No evidence yet' }}</div>
+   {% set currentAssessmentError = assessmentError is not null and assessmentError.index == loop.index0 ? assessmentError : null %}
+   <form class="form-line" style="margin-top:12px" action="{{ path('novora_kaizen_update', {id:case.id,action:'assessment'}) }}" method="post">
+    <input type="hidden" name="_token" value="{{ token }}"><input type="hidden" name="index" value="{{ loop.index0 }}">
+    <div><label for="assessment-{{ loop.index0 }}">Assessment</label><select id="assessment-{{ loop.index0 }}" name="assessment">{% for st in ['unverified','confirmed','rejected'] %}<option value="{{ st }}" {% if (currentAssessmentError ? currentAssessmentError.assessment : cause.assessment) == st %}selected{% endif %}>{{ st|capitalize }}</option>{% endfor %}</select></div>
+    <div><label for="assessment-evidence-{{ loop.index0 }}">Supporting / refuting evidence</label>
+      <input id="assessment-evidence-{{ loop.index0 }}" name="evidence" maxlength="4000" value="{{ currentAssessmentError ? currentAssessmentError.evidence : cause.evidence }}"{% if currentAssessmentError %} autofocus aria-invalid="true" aria-describedby="assessment-error-{{ loop.index0 }}"{% endif %}>
+      {% if currentAssessmentError %}<p id="assessment-error-{{ loop.index0 }}" role="alert" class="small" style="color:#b42318;margin-top:6px">{{ currentAssessmentError.message }}</p>{% endif %}
+    </div>
+    <button class="btn" type="submit">Save</button>
+   </form>
+  </div>
+  {% else %}<div class="empty">No hypotheses recorded yet.</div>{% endfor %}
+  <hr class="divider">
+  <form class="spaced" action="{{ path('novora_kaizen_update', {id:case.id,action:'ishikawa'}) }}" method="post">
+   <input type="hidden" name="_token" value="{{ token }}">
+   <div><label for="category">Cause category</label><select id="category" name="category">
+   {% for category in ['code','data','infrastructure','dependencies','process','configuration'] %}<option value="{{ category }}">{{ category|capitalize }}</option>{% endfor %}
+   </select></div>
+   <div><label for="hypothesis">Possible cause</label><textarea id="hypothesis" name="hypothesis" required maxlength="4000"></textarea></div>
+   <div><label for="cause-evidence">Evidence (optional until confirmed)</label><input id="cause-evidence" name="evidence" maxlength="4000"></div>
+   <button class="btn btn-primary" type="submit">＋ Add hypothesis</button>
+  </form>
+ </section>
+</div>
+<div class="grid-2">
+ <section class="card"><h2>3 · 5 Whys</h2>
+  <p class="small muted">Each answer should follow from observable facts. Five is a guide, not a mandatory number of conclusions.</p>
+  {% for step in 1..5 %}
+   <form class="form-line" action="{{ path('novora_kaizen_update', {id:case.id,action:'why'}) }}" method="post" style="margin-bottom:13px">
+    <input type="hidden" name="_token" value="{{ token }}"><input type="hidden" name="step" value="{{ step }}">
+    <div><label for="why-{{ step }}">Why {{ step }}?</label><textarea id="why-{{ step }}" name="answer" maxlength="4000" rows="2" style="min-height:62px" placeholder="Evidence-based answer">{{ attribute(case.whys, step) is defined ? attribute(case.whys, step) : '' }}</textarea></div>
+    <button class="btn" type="submit">Save</button>
+   </form>
+  {% endfor %}
+ </section>
+ <section class="card"><h2>4 · PDCA improvement cycle</h2>
+  <p class="small muted">Record when the countermeasure was applied. The comparison is a log sample, never automatic proof that the problem is resolved.</p>
+  {% if case.fingerprint %}
+  <div class="pdca-verification">
+    <div class="section-head">
+      <h3>PDCA Check · Before / After</h3>
+      {% if verification is not null %}
+        <span class="tag {% if verification.status == 'recurrence_observed' %}error{% elseif verification.status == 'no_recurrence_observed' %}confirmed{% endif %}">
+          {% if verification.status == 'recurrence_observed' %}Recurrence observed
+          {% elseif verification.status == 'no_recurrence_observed' %}No recurrence in sample
+          {% else %}Insufficient evidence{% endif %}
+        </span>
+      {% else %}
+        <span class="pill">Awaiting observation</span>
+      {% endif %}
+    </div>
+    {% if case.correction_applied_at is defined and case.correction_applied_at %}
+      <div class="small muted">Correction applied: {{ case.correction_applied_at|date('Y-m-d H:i T', correctionTimezone) }}</div>
+    {% endif %}
+    <form class="form-line pdca-correction-form" method="post" action="{{ path('novora_kaizen_update', {id:case.id, action:'correction'}) }}">
+      <input type="hidden" name="_token" value="{{ token }}">
+      <div>
+        <label for="correction-applied">Correction time ({{ correctionTimezone }})</label>
+        <input id="correction-applied" name="applied_at" type="datetime-local">
+        <div class="tiny muted">Leave blank to record the current time. Use a past date if you already applied the fix.</div>
+      </div>
+      <button class="btn" type="submit">Record correction</button>
+    </form>
+    {% if verification is not null %}
+      <div class="pdca-metrics">
+        <div class="pdca-metric"><span class="small muted">Before</span><strong>{{ verification.before }}</strong><span class="tiny muted">matching entries</span></div>
+        <div class="pdca-metric"><span class="small muted">After</span><strong>{{ verification.after }}</strong><span class="tiny muted">matching entries</span></div>
+        <div class="pdca-metric"><span class="small muted">Since correction</span><strong>{{ verification.since }}</strong><span class="tiny muted">matching entries</span></div>
+      </div>
+      <div class="small muted">Equal {{ verification.hours }}-hour intervals around the correction. All observed log events in those windows: {{ verification.beforeEvents }} before / {{ verification.afterEvents }} after.</div>
+      <div class="small muted">First seen in sample: {{ verification.firstSeen ? verification.firstSeen|date('Y-m-d H:i:s') : 'not present' }} · Last seen: {{ verification.lastSeen ? verification.lastSeen|date('Y-m-d H:i:s') : 'not present' }}</div>
+      {% if verification.status == 'insufficient_evidence' %}
+        <p class="small muted">The sampled log does not contain enough before/after evidence to assess this correction. Older entries may have rotated out or the application may not have logged any activity after the change.</p>
+      {% elseif verification.status == 'recurrence_observed' %}
+        <p class="small muted">The exact fingerprint appeared again after the correction. Investigate whether the issue persists; the case has not been closed automatically.</p>
+      {% else %}
+        <p class="small muted">No recurrence of this exact fingerprint was observed in the available logs after the correction. This is a candidate improvement, not proof of resolution or comparable application traffic.</p>
+      {% endif %}
+      {% if verification.postWindowLimited %}
+        <p class="small muted">The equal-window comparison covers the first 24 hours after the fix. The “Since correction” count also includes later available records.</p>
+      {% endif %}
+      {% if not verification.completeBefore %}
+        <p class="small muted">Baseline incomplete: the log sample does not reach the start of the comparison window.</p>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% else %}
+    <div class="notice">To compare before/after counts, start an investigation from a concrete Pareto issue. This case is not linked to a log fingerprint.</div>
+  {% endif %}
+  {% for phase,help in {'plan':'What change and success criterion?','do':'What was implemented, when and where?','check':'Baseline, post-change measurement and limitations?','act':'What is standardized or what will be tried next?'} %}
+   <form class="spaced" style="margin-bottom:18px" action="{{ path('novora_kaizen_update', {id:case.id,action:'pdca'}) }}" method="post">
+    <input type="hidden" name="_token" value="{{ token }}"><input type="hidden" name="phase" value="{{ phase }}">
+    <div><label for="pdca-{{ phase }}"><span class="tag">{{ phase|upper }}</span> &nbsp; {{ help }}</label><textarea id="pdca-{{ phase }}" name="description" maxlength="4000" rows="2" style="min-height:65px">{{ attribute(case.pdca, phase) }}</textarea></div>
+    <button class="btn" type="submit">Save {{ phase|upper }}</button>
+   </form>
+  {% endfor %}
+ </section>
+</div>
+{% endblock %}

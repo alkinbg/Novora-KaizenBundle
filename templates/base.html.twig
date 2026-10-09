@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>{% block title %}Kaizen{% endblock %} · Novora</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#1d2939;background:#f3f5f8}
+*{box-sizing:border-box}body{margin:0}a{color:inherit;text-decoration:none}a:hover{color:#bc5a12}
+.shell{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
+.sidebar{background:#151f30;color:#cbd5e1;padding:28px 16px}.brand{display:flex;align-items:center;gap:11px;margin:0 10px 36px;color:#fff;font-size:19px;font-weight:800}
+.mark{display:grid;place-items:center;background:#ed8736;color:#23160e;width:34px;height:34px;border-radius:10px}
+.nav-link{display:block;padding:12px 16px;border-radius:10px;margin:6px 0;color:#b8c4d4}
+.nav-link:hover,.nav-link.active{background:#293548;color:#fff}
+.sidebar small{color:#8ea0b8;display:block;margin:35px 16px 10px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.content{padding:34px clamp(20px,4vw,60px);max-width:1600px;width:100%;margin:auto}
+.headline{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:15px;margin:0 0 25px}
+h1{font-size:clamp(25px,2.2vw,34px);letter-spacing:-.04em;margin:0 0 5px;color:#101828}
+h2{margin:0 0 17px;font-size:20px;letter-spacing:-.025em;color:#101828}
+h3{margin:0 0 12px;font-size:16px}.muted{color:#667085}.small{font-size:13px}.tiny{font-size:11px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;box-shadow:0 5px 20px rgba(16,24,40,.025);padding:22px;margin-bottom:20px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px}
+.number{font-size:30px;font-weight:750;letter-spacing:-.06em;margin:8px 0 2px;color:#1d2939}
+.emphasis{color:#cf6415}.danger{color:#c43d3d}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+table{border-collapse:collapse;width:100%;font-size:13px}th{text-align:left;background:#f9fafb;color:#667085;font-size:12px;font-weight:700}td,th{border-bottom:1px solid #eef0f4;padding:13px 10px;vertical-align:top}tr:last-child td{border-bottom:0}
+.tag{display:inline-block;border-radius:8px;padding:5px 9px;font-size:11px;font-weight:750;background:#eef2f6;color:#475467;text-transform:uppercase}
+.tag.error,.tag.critical,.tag.emergency,.tag.alert{background:#feeceb;color:#bc3936}.tag.warning{background:#fff2d7;color:#ae7013}.tag.info{background:#e7f2ff;color:#2a609e}
+.tag.confirmed{background:#e7f8ed;color:#166534}.tag.rejected{background:#f1f2f4;color:#667085}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:9px 14px;font:inherit;font-size:13px;font-weight:700;border-radius:9px;border:1px solid #d7dfe8;background:#fff;cursor:pointer;color:#344054}
+.btn:hover{background:#f7fafc}.btn-primary{background:#db751f;color:#fff;border-color:#db751f}.btn-primary:hover{background:#c56619;color:#fff}
+input,textarea,select{width:100%;font:inherit;font-size:13px;color:#101828;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}textarea{resize:vertical;min-height:85px}
+label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:#475467}
+.form-line{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.form-line>*{flex:1;min-width:120px}
+form .btn{flex:0 0 auto}form{margin:0}.spaced{display:flex;flex-direction:column;gap:12px}
+.divider{border:0;border-top:1px solid #eef0f4;margin:20px 0}
+.meter{height:7px;border-radius:10px;background:#f0f1f4;overflow:hidden}.fill{height:100%;background:#e78a32;border-radius:10px}
+.issue{display:flex;gap:14px;justify-content:space-between;align-items:center;border-bottom:1px solid #edf0f4;padding:14px 0}
+.issue:last-child{border:0}.issue-name{font-weight:650;overflow-wrap:anywhere;font-size:13px}
+.section-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.notice{background:#fff7eb;border:1px solid #ffdfac;border-radius:10px;padding:13px 16px;color:#81551c;font-size:13px;margin-bottom:20px}
+.record{border-left:3px solid #ef993f;background:#fafbfd;border-radius:0 10px 10px 0;padding:14px;margin:11px 0;overflow-wrap:anywhere}
+.record p{margin:4px 0}.text-pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.step{border:1px solid #e2e8f0;border-radius:12px;padding:15px;background:#fff}
+.mini-head{font-size:11px;font-weight:750;letter-spacing:.07em;text-transform:uppercase;color:#9a611c}
+.pill{border-radius:100px;padding:5px 10px;background:#f1f5f9;font-size:12px}
+.empty{border:1px dashed #cbd5e1;border-radius:12px;padding:24px;color:#667085;text-align:center}
+footer{color:#98a2b3;font-size:12px;margin-top:28px}
+@media(max-width:950px){.shell{grid-template-columns:1fr}.sidebar{padding:12px 18px}.brand{margin:0 0 10px}.sidebar small{display:none}.nav-link{display:inline-block;margin-right:6px}.content{padding:22px}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:630px){.stats,.grid-2,.grid-3{grid-template-columns:1fr}.card{padding:17px}.stat{padding:16px}.form-line{display:block}.form-line>*{margin-bottom:10px}table{display:block;overflow:auto}}
+
+/* Keep verbose diagnostic strings from expanding the entire layout. */
+html,body{max-width:100%;overflow-x:clip}
+.content,.headline>div,.grid-2>*,.grid-3>*,.stat,.step,.issue-body{min-width:0}
+h1,h2,h3,.issue-name,.step strong,.case-title,.record,.text-pre{overflow-wrap:anywhere;word-break:break-word}
+.opportunity{display:flex;flex-direction:column;gap:10px}
+.opportunity-top{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.opportunity-count{font-size:22px;letter-spacing:-.04em;font-weight:800;white-space:nowrap}
+.opportunity-channel{margin-top:-6px}
+.opportunity-message{font-size:13px;font-weight:650;line-height:1.5;overflow-wrap:anywhere}
+.opportunity-reason{margin:0}
+.opportunity form{margin-top:auto}
+.log-details{font-size:12px;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.log-details summary{cursor:pointer;color:#a85b17;font-weight:700}
+.log-details p{border-left:3px solid #e78a32;background:#fafbfd;padding:10px;border-radius:0 8px 8px 0}
+.case-title{display:block;line-height:1.5}
+
+
+/* Real Pareto chart - lightweight, responsive, no JavaScript dependencies. */
+.pareto-card{overflow:hidden}
+.pareto-filters{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.pareto-filters .btn{white-space:nowrap}
+.pareto-meta{display:flex;flex-wrap:wrap;gap:8px 20px;color:#667085;font-size:12px;margin:10px 0 8px}
+.pareto-meta strong{color:#1d2939}
+.pareto-chart-scroll{width:100%;overflow-x:auto;overflow-y:hidden}
+.pareto-svg{width:100%;height:auto;min-width:650px;display:block}
+.chart-grid line{stroke:#e5eaf0;stroke-width:1}
+.chart-axis-title{fill:#667085;font-size:18px;font-weight:700}
+.chart-axis-label{fill:#667085;font-size:15px}
+.chart-bar-value{fill:#475467;font-size:15px;font-weight:700}
+.pareto-bar{transition:fill .12s ease}
+a:hover .pareto-bar,a:focus .pareto-bar{fill:#b95813}
+.pareto-chart-legend{display:flex;align-items:center;gap:18px;flex-wrap:wrap;font-size:12px;color:#667085}
+.pareto-chart-legend span{display:inline-flex;gap:8px;align-items:center}
+.legend-swatch{width:20px;height:10px;display:inline-block}
+.legend-bar{background:#e98b34;border-radius:3px}
+.legend-line{height:0;border-top:3px solid #147d82}
+.legend-threshold{height:0;border-top:2px dashed #9b7b47}
+.pareto-insight{font-size:13px;line-height:1.55;background:#f7fafc;padding:13px 16px;border-radius:10px;margin:16px 0}
+.pareto-patterns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px}
+.pareto-pattern{border-top:1px solid #e9edf2;padding:12px 0;display:flex;align-items:center;gap:12px;min-width:0;scroll-margin-top:20px}
+.pareto-pattern:target{background:#fff8ed}
+.pareto-pattern-index{background:#fff0df;color:#b45c19;display:grid;place-items:center;flex:0 0 31px;height:31px;border-radius:7px;font-size:12px;font-weight:750}
+.pareto-pattern-content{min-width:0;flex:1}
+.pareto-pattern-content strong{display:block;font-size:12px;line-height:1.4;overflow-wrap:anywhere;margin-bottom:4px}
+.pareto-pattern-content .small{display:block}
+.pareto-pattern .btn{white-space:nowrap}
+.pareto-pattern form{flex:0 0 auto}
+@media(max-width:1060px){.pareto-patterns{grid-template-columns:1fr}}
+@media(max-width:640px){.pareto-card{padding:14px}.pareto-pattern{flex-wrap:wrap}.pareto-pattern form{margin-left:44px}.pareto-patterns{grid-template-columns:1fr}}
+
+
+/* Symptom-family filters add meaning without a second duplicate chart. */
+.family-filters{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 9px}
+.family-option{border:1px solid #e1e6ed;border-radius:10px;padding:9px 13px;display:flex;flex-direction:column;gap:3px;background:#fafbfd;min-width:125px}
+.family-option strong{font-size:12px;line-height:1.35;color:#344054}
+.family-option span{font-size:11px;color:#667085}
+.family-option:hover,.family-option:focus{background:#fff7ed;border-color:#ecab73}
+.family-option-active{border-color:#d77421;background:#fff6eb}
+@media(max-width:640px){.family-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.family-option{min-width:0}}
+.family-breadcrumb{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 8px}
+.family-breadcrumb strong{font-size:15px}
+.family-intro{margin:12px 0 8px}
+.correlation-summary{display:flex;flex-wrap:wrap;gap:8px 24px;margin:10px 0;font-size:13px;color:#667085}
+.correlation-summary strong{color:#1d2939}
+.execution-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.execution-link{display:flex;flex-direction:column;gap:3px;border:1px solid #e4e9f0;border-radius:9px;padding:12px;min-width:0;font-size:13px}
+.execution-link:hover{background:#fff6ed}
+@media(max-width:730px){.execution-links{grid-template-columns:1fr}}
+
+/* Severity filters for individual execution timelines. */
+.execution-filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.execution-filters .btn{white-space:nowrap}
+.filter-count{padding:2px 7px;background:#eef1f5;border-radius:20px;color:#475467;font-size:12px;font-weight:750}
+.btn-primary .filter-count{background:rgba(255,255,255,.24);color:#fff}
+
+
+.pdca-verification{border:1px solid #e2e8f0;background:#fafbfd;border-radius:12px;padding:16px;margin:12px 0 20px}
+.pdca-correction-form{margin:14px 0}
+.pdca-correction-form .tiny{display:block;margin-top:5px}
+.pdca-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.pdca-metric{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:3px}
+.pdca-metric strong{font-size:24px;line-height:1.1}
+@media(max-width:650px){.pdca-metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">✦</span> Novora Kaizen</div>
+    <small>Observe &amp; improve</small>
+    <a class="nav-link {% if app.request.attributes.get('_route') == 'novora_kaizen_dashboard' %}active{% endif %}" href="{{ path('novora_kaizen_dashboard') }}">◉ &nbsp; Waste radar</a>
+    <a class="nav-link {% if app.request.attributes.get('_route') starts with 'novora_kaizen_investigations' or app.request.attributes.get('_route') == 'novora_kaizen_detail' %}active{% endif %}" href="{{ path('novora_kaizen_investigations') }}">▧ &nbsp; Improvements</a>
+    <small>Lean tools</small>
+    <div class="small" style="padding:10px 16px;color:#97a9bf;line-height:2">Gemba observation<br>Ishikawa &amp; 5 Whys<br>PDCA follow-through</div>
+  </aside>
+  <main class="content">{% block body %}{% endblock %}
+    <footer>Novora KaizenBundle · Observation ≠ causation · No external telemetry</footer>
+  </main>
+</div>
+</body>
+</html>

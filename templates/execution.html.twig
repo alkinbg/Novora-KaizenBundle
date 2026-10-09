@@ -1,0 +1,56 @@
+{% extends '@NovoraKaizen/base.html.twig' %}
+{% block title %}Execution details{% endblock %}
+{% block body %}
+<div class="headline">
+  <div>
+    <div class="mini-head"><a href="{{ path('novora_kaizen_dashboard', {scope:'errors'}) }}">← Waste Radar / Errors</a></div>
+    <h1>Correlated execution</h1>
+    <div class="muted">These records share an explicit execution ID. This is not proof of a single root cause.</div>
+  </div>
+</div>
+<div class="card">
+  <div class="section-head">
+    <div>
+      <h2>{{ origin|upper }} execution</h2>
+      <div class="small muted">ID: <code>{{ executionId }}</code></div>
+    </div>
+    <span class="pill">{{ eventCount|number_format }} log entries</span>
+  </div>
+  <nav class="execution-filters" aria-label="Filter logs by severity">
+    {% for value, label in {'problems':'Problems', 'critical':'Critical', 'error':'Error', 'warning':'Warning', 'info':'Info', 'debug':'Debug', 'all':'All'} %}
+      <a href="{{ path('novora_kaizen_execution', {id: executionId, level: value}) }}"
+         class="btn {% if selectedLevel == value %}btn-primary{% endif %}"
+         {% if selectedLevel == value %}aria-current="page"{% endif %}>
+        {{ label }} <span class="filter-count">{{ attribute(levelCounts, value) }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+  <p class="small muted">
+    Showing {{ displayedCount }} of {{ selectedCount }} matching entries
+    ({{ eventCount|number_format }} total in this execution's sampled logs).
+    Earlier/later records outside the bounded file sample may be missing.
+  </p>
+  <table>
+    <thead><tr><th>Time</th><th>Level</th><th>Channel</th><th>Message</th></tr></thead>
+    <tbody>
+    {% for event in timeline %}
+      <tr>
+        <td class="small">{{ event.at }}</td>
+        <td><span class="tag {{ event.level }}">{{ event.level }}</span></td>
+        <td>{{ event.channel }}</td>
+        <td class="text-pre">
+          {% if event.message|length > 420 %}
+            {{ event.message|slice(0,420) }}…
+            <details class="log-details"><summary>View diagnostic details</summary><p class="small text-pre">{{ event.message }}</p></details>
+          {% else %}
+            {{ event.message }}
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">No matching entries in this execution. Choose another severity filter.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

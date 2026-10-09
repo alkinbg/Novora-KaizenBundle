@@ -1,0 +1,246 @@
+{% extends '@NovoraKaizen/base.html.twig' %}
+{% block title %}Waste Radar{% endblock %}
+{% block body %}
+{% if not storageWritable %}<div class="notice" role="alert">Improvement storage is not writable by the PHP process. Check the configured <code>var/kaizen</code> directory owner and permissions before creating a case. Do not use chmod 777.</div>{% endif %}
+<div class="headline">
+  <div>
+    <div class="mini-head">CONTINUOUS IMPROVEMENT / OBSERVE</div>
+    <h1>Waste Radar</h1>
+    <div class="muted">Find recurring problems, focus the investigation, measure the improvement.</div>
+  </div>
+  <a class="btn btn-primary" href="{{ path('novora_kaizen_investigations') }}">↗ Improvement workspace</a>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="small muted">Parsed events</div><div class="number">{{ total|number_format }}</div><div class="small muted">Sampled log tail</div></div>
+  <div class="stat"><div class="small muted">Errors &amp; critical</div><div class="number danger">{{ errors|number_format }}</div><div class="small muted">In this sample</div></div>
+  <div class="stat"><div class="small muted">Distinct patterns</div><div class="number">{{ groups|number_format }}</div><div class="small muted">Grouped fingerprints</div></div>
+  <div class="stat"><div class="small muted">Events · last 24h</div><div class="number emphasis">{{ trend.current|number_format }}</div><div class="small muted">Previous 24h in sample: {{ trend.previous|number_format }}</div></div>
+</div>
+
+<div class="notice">
+  Based on the last {{ (maxBytes / 1048576)|number_format(1) }} MiB of <strong>{{ logPath }}</strong>.
+  This is a <strong>sample of log records</strong>, not a complete application failure rate or proof of regression.
+</div>
+
+<section class="card" aria-labelledby="correlation-heading">
+  <div class="section-head">
+    <div>
+      <h2 id="correlation-heading">Execution correlation</h2>
+      <p class="small muted">Verify collection of execution metadata separately from the count of error-bearing executions.</p>
+    </div>
+    <span class="pill">Configuration: {{ correlationEnabled ? 'enabled' : 'disabled' }}</span>
+  </div>
+  <div class="correlation-summary">
+    <span><strong>{{ correlation.observedEntries|number_format }}</strong> tagged log entries</span>
+    <span><strong>{{ correlation.observedExecutions|number_format }}</strong> observed executions</span>
+    <span><strong>{{ correlation.knownExecutions|number_format }}</strong> executions with errors</span>
+    <span><strong>{{ correlation.correlatedErrorEvents|number_format }}</strong> correlated error entries</span>
+    <span><strong>{{ correlation.uncorrelatedErrorEvents|number_format }}</strong> error entries without IDs</span>
+  </div>
+  {% if not correlationEnabled %}
+    <p class="small muted">Correlation is disabled in this Symfony environment. To begin collecting metadata, set <code>novora_kaizen.correlation_enabled: true</code> and clear the Symfony cache.</p>
+  {% elseif correlation.observedEntries == 0 %}
+    <p class="small muted">Correlation is configured, but no execution IDs were found in the current log sample. This may mean the records predate activation, no new records were written, or the active log handler/formatter does not preserve the extra metadata.</p>
+  {% elseif correlation.knownExecutions == 0 %}
+    <p class="small muted">Execution metadata is present in the log sample, but none of its error-level records has an execution ID. No correlated error executions can be shown yet.</p>
+  {% else %}
+    <p class="small muted">Error-bearing executions by origin — HTTP: {{ correlation.byOrigin.http }} · Messenger: {{ correlation.byOrigin.messenger }} · CLI: {{ correlation.byOrigin.cli }}</p>
+    <details>
+      <summary>Inspect executions with errors</summary>
+      <div class="execution-links">
+      {% for execution in correlation.executions|slice(0,10) %}
+        <a class="execution-link" href="{{ path('novora_kaizen_execution', {id:execution.id}) }}">
+          <span><strong>{{ execution.origin|upper }}</strong> · {{ execution.count }} error entries</span>
+          <span class="small muted">{{ execution.last|date('Y-m-d H:i:s') }} · {{ execution.id|slice(0,8) }}…</span>
+          <span>View timeline →</span>
+        </a>
+      {% endfor %}
+      </div>
+    </details>
+  {% endif %}
+</section>
+
+<section class="card pareto-card" aria-labelledby="pareto-heading">
+  <div class="section-head">
+    <div>
+      <div class="mini-head">FOCUS / FREQUENCY ANALYSIS</div>
+      <h2 id="pareto-heading">{% if familyOverview %}Errors by symptom family{% elseif family is not null %}Error patterns · {{ selectedFamily }}{% else %}Pareto analysis{% endif %}</h2>
+      <p class="small muted">Frequency of recurring patterns and cumulative share. Use the filters to separate compatibility debt from actual failures.</p>
+    </div>
+    <nav class="pareto-filters" aria-label="Pareto scope">
+      <a class="btn {% if scope == 'actionable' %}btn-primary{% endif %}" {% if scope == 'actionable' %}aria-current="page"{% endif %} href="{{ path('novora_kaizen_dashboard', {scope:'actionable'}) }}">Relevant patterns</a>
+      <a class="btn {% if scope == 'errors' %}btn-primary{% endif %}" {% if scope == 'errors' %}aria-current="page"{% endif %} href="{{ path('novora_kaizen_dashboard', {scope:'errors'}) }}">Errors</a>
+      <a class="btn {% if scope == 'compatibility' %}btn-primary{% endif %}" {% if scope == 'compatibility' %}aria-current="page"{% endif %} href="{{ path('novora_kaizen_dashboard', {scope:'compatibility'}) }}">Deprecations</a>
+    </nav>
+  </div>
+
+  {% if scope == 'errors' %}
+    {% if familyOverview %}
+      <p class="small muted family-intro">Overview of error families. Select a bar or family below to inspect its individual exceptions.</p>
+    {% else %}
+      <div class="family-breadcrumb">
+        <a href="{{ path('novora_kaizen_dashboard', {scope:'errors'}) }}" class="btn">← Back to error families</a>
+        <strong>{{ selectedFamily }}</strong>
+      </div>
+      <p class="small muted">Showing original error patterns for this symptom family; grouping does not prove a shared root cause.</p>
+    {% endif %}
+  {% endif %}
+
+  {% if chart.total > 0 %}
+    <div class="pareto-meta">
+      <span><strong>{{ chart.total|number_format }}</strong> events in selected scope{% if family is not null %} ({{ family }}){% endif %}</span>
+      <span><strong>{{ chart.coveredPercent }}%</strong> represented by {{ chart.buckets|length }} ranked {{ familyOverview ? 'families' : 'patterns' }}</span>
+      {% if chart.otherCount > 0 %}<span><strong>{{ chart.otherCount }}</strong> further events ({{ chart.otherPercent }}%) are not plotted</span>{% endif %}
+      <span>{{ hiddenRoutinePatterns }} routine patterns excluded</span>
+    </div>
+
+    <div class="pareto-chart-scroll">
+      <svg viewBox="0 0 1020 345" class="pareto-svg" role="img" aria-labelledby="pareto-svg-title pareto-svg-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="pareto-svg-title">Pareto of {{ familyOverview ? 'error families' : 'error patterns' }}</title>
+        <desc id="pareto-svg-desc">Orange bars represent occurrence counts on the left axis. The teal line represents cumulative percentage on the right axis. A dashed reference line marks 80 percent. A data-driven selection of top-ranked issue patterns is displayed. Remaining events are summarized separately to preserve the descending frequency ordering.</desc>
+
+        <text x="95" y="34" class="chart-axis-title">Occurrences</text>
+        <text x="930" y="34" class="chart-axis-title" text-anchor="end">Cumulative share</text>
+        <g class="chart-grid">
+          <line x1="95" y1="78" x2="930" y2="78"/>
+          <line x1="95" y1="178" x2="930" y2="178"/>
+          <line x1="95" y1="278" x2="930" y2="278"/>
+        </g>
+        <g class="chart-axis-label">
+          <text x="83" y="82" text-anchor="end">{{ chart.maxCount|number_format }}</text>
+          <text x="83" y="182" text-anchor="end">{{ (chart.maxCount / 2)|round|number_format }}</text>
+          <text x="83" y="282" text-anchor="end">0</text>
+          <text x="944" y="82">100%</text>
+          <text x="944" y="122">80%</text>
+          <text x="944" y="182">50%</text>
+          <text x="944" y="282">0%</text>
+        </g>
+        <line x1="95" y1="118" x2="930" y2="118" stroke="#9b7b47" stroke-width="1.6" stroke-dasharray="5 6"/>
+
+        {% for bucket in chart.buckets %}
+          <a href="{{ familyOverview ? path('novora_kaizen_dashboard', {scope:'errors', family:bucket.fingerprint}) : '#pareto-pattern-' ~ loop.index }}" aria-label="{{ bucket.label }}: {{ bucket.count }} occurrences, {{ bucket.percent }} percent">
+            <rect x="{{ bucket.x }}" y="{{ bucket.y }}" width="{{ bucket.width }}" height="{{ bucket.height }}" rx="4" fill="#e98b34" class="pareto-bar"/>
+            <title>{{ bucket.example }} — {{ bucket.count }} events ({{ bucket.percent }}%)</title>
+          </a>
+          <text x="{{ bucket.center }}" y="{{ bucket.y > 70 ? bucket.y - 8 : 62 }}" text-anchor="middle" class="chart-bar-value">{{ bucket.count }}</text>
+          <text x="{{ bucket.center }}" y="302" text-anchor="middle" class="chart-axis-label">{{ bucket.label }}</text>
+        {% endfor %}
+        <polyline points="{{ chart.points }}" fill="none" stroke="#147d82" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        {% for bucket in chart.buckets %}
+          <circle cx="{{ bucket.center }}" cy="{{ bucket.lineY }}" r="5" fill="#fff" stroke="#147d82" stroke-width="2.6">
+            <title>Cumulative: {{ bucket.cumulative }}% at {{ bucket.label }}</title>
+          </circle>
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="pareto-chart-legend">
+      <span><i class="legend-swatch legend-bar"></i> Occurrences</span>
+      <span><i class="legend-swatch legend-line"></i> Cumulative %</span>
+      <span><i class="legend-swatch legend-threshold"></i> 80% reference</span>
+    </div>
+    <p class="pareto-insight">
+      {% if chart.thresholdBucket is not null %}
+        {% set boundary = chart.buckets[chart.thresholdBucket] %}
+        <strong>{{ chart.thresholdBucket + 1 }} {{ familyOverview ? 'families' : 'patterns' }}</strong> account for <strong>{{ boundary.cumulative }}%</strong> of the selected events.
+      {% else %}
+        The first {{ chart.buckets|length }} {{ familyOverview ? 'families' : 'patterns' }} account for <strong>{{ chart.coveredPercent }}%</strong>.
+        The 80% threshold is not reached within the displayed patterns.
+      {% endif %}
+      {% if chart.otherCount > 0 %}
+        Remaining {{ chart.otherCount|number_format }} events ({{ chart.otherPercent }}%) are excluded from the bars and line.
+      {% endif %}
+      Frequency alone does not determine severity or business impact.
+    </p>
+
+    <div class="pareto-patterns">
+      {% for bucket in chart.buckets %}
+          <div class="pareto-pattern" id="pareto-pattern-{{ loop.index }}">
+            <span class="pareto-pattern-index">{{ familyOverview ? loop.index : bucket.label }}</span>
+            <div class="pareto-pattern-content">
+              <strong title="{{ bucket.example }}">{{ bucket.example|slice(0,110) }}{% if bucket.example|length > 110 %}…{% endif %}</strong>
+              {% if not familyOverview and bucket.example|length > 110 %}
+                <details class="log-details"><summary>Full message</summary><p class="small text-pre">{{ bucket.example }}</p></details>
+              {% endif %}
+              <span class="small muted">{{ bucket.count|number_format }} events · {{ bucket.percent }}% · cumulative {{ bucket.cumulative }}%</span>
+            </div>
+            {% if familyOverview %}
+              <a class="btn" href="{{ path('novora_kaizen_dashboard', {scope:'errors', family:bucket.fingerprint}) }}">View exceptions →</a>
+            {% else %}
+              <form method="post" action="{{ path('novora_kaizen_create') }}">
+                <input type="hidden" name="_token" value="{{ createToken }}">
+                <input type="hidden" name="fingerprint" value="{{ bucket.fingerprint }}">
+                <input type="hidden" name="title" value="{{ (bucket.level|upper ~ ' · ' ~ bucket.example)|slice(0,100) }}">
+                <input type="hidden" name="problem" value="Pattern observed {{ bucket.count }} times within the selected sample. Validate impact and evidence.">
+                <button type="submit" class="btn">Investigate ↗</button>
+              </form>
+            {% endif %}
+          </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">No matching log patterns for this filter. Try another scope or check whether the log file contains records.</div>
+  {% endif %}
+</section>
+
+{% if scope == 'actionable' %}
+<section class="card" aria-labelledby="muda-heading">
+  <div class="section-head">
+    <div>
+      <h2 id="muda-heading">Muda radar · Improvement candidates</h2>
+      <p class="small muted">Rule-based signals, not verified causes. Actual errors are prioritized over compatibility warnings and logging volume.</p>
+    </div>
+    <span class="pill">Top {{ opportunities|slice(0,3)|length }} findings</span>
+  </div>
+  <div class="grid-3 opportunities">
+    {% for item in opportunities|slice(0,3) %}
+      <article class="step opportunity">
+        <div class="opportunity-top">
+          <span class="tag {% if item.type == 'Compatibility debt' %}warning{% else %}{{ item.level }}{% endif %}">{{ item.type }}</span>
+          <span class="opportunity-count">{{ item.count|number_format }}×</span>
+        </div>
+        <div class="small muted opportunity-channel">{{ item.channel }} · {{ item.level|upper }}</div>
+        <div class="opportunity-message">{{ item.example|slice(0,115) }}{% if item.example|length > 115 %}…{% endif %}</div>
+        {% if item.example|length > 115 %}
+          <details class="log-details"><summary>Full message</summary><p class="small text-pre">{{ item.example }}</p></details>
+        {% endif %}
+        <p class="small muted opportunity-reason">{{ item.reason }}</p>
+        <form method="post" action="{{ path('novora_kaizen_create') }}">
+          <input type="hidden" name="_token" value="{{ createToken }}">
+          <input type="hidden" name="fingerprint" value="{{ item.fingerprint }}">
+          <input type="hidden" name="title" value="{{ (item.type ~ ' · ' ~ item.example)|slice(0,100) }}">
+          <input type="hidden" name="problem" value="{{ item.reason }}">
+          <button type="submit" class="btn">Investigate ↗</button>
+        </form>
+      </article>
+    {% else %}
+      <div class="empty">No improvement candidates detected in this sample.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Begin an investigation</h2>
+    <p class="small muted">Record evidence, Gemba observations, Ishikawa hypotheses, 5 Whys and a measured PDCA cycle.</p>
+    <form method="post" action="{{ path('novora_kaizen_create') }}" class="spaced">
+      <input type="hidden" name="_token" value="{{ createToken }}">
+      <div><label for="title">Problem statement</label><input id="title" name="title" required maxlength="200" placeholder="What needs improving?"></div>
+      <div><label for="problem">Initial context (optional)</label><textarea id="problem" name="problem" maxlength="4000" placeholder="What is observed and why does it matter?"></textarea></div>
+      <button class="btn btn-primary" type="submit">＋ Create improvement case</button>
+    </form>
+  </section>
+  <section class="card">
+    <div class="section-head"><h2>Active investigations</h2><a class="small" href="{{ path('novora_kaizen_investigations') }}">View all →</a></div>
+    {% for case in investigations|slice(0,6) %}
+      <a href="{{ path('novora_kaizen_detail', {id:case.id}) }}" class="issue">
+        <div class="issue-body"><strong class="case-title">{{ case.title|slice(0,95) }}{% if case.title|length > 95 %}…{% endif %}</strong><div class="small muted">{{ case.updated_at }}</div></div>
+        <span class="tag">{{ case.status }}</span>
+      </a>
+    {% else %}
+      <div class="empty">No investigations yet. Start from a problem above.</div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

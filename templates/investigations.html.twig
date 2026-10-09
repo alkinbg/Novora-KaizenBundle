@@ -1,0 +1,32 @@
+{% extends '@NovoraKaizen/base.html.twig' %}
+{% block title %}Improvements{% endblock %}
+{% block body %}
+{% if not storageWritable %}<div class="notice" role="alert">Improvement storage is not writable by the PHP process. Check the configured <code>var/kaizen</code> directory owner and permissions before creating a case. Do not use chmod 777.</div>{% endif %}
+<div class="headline"><div><div class="mini-head">Lean / Improvement workspace</div><h1>Improvement cases</h1><div class="muted">A3 thinking: observe, establish cause, test change, standardize.</div></div></div>
+<div class="grid-2">
+  <div class="card">
+    <h2>Open a new case</h2>
+    <form action="{{ path('novora_kaizen_create') }}" method="post" class="spaced">
+      <input type="hidden" name="_token" value="{{ createToken }}">
+      <div><label for="title">What problem are we solving?</label><input id="title" name="title" maxlength="200" required placeholder="Clear, measurable problem statement"></div>
+      <div><label for="problem">Current condition and impact</label><textarea id="problem" name="problem" maxlength="4000" placeholder="Observed symptoms, baseline, affected users or process"></textarea></div>
+      <button class="btn btn-primary" type="submit">＋ Create case</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Problem-solving method</h2>
+    <div class="spaced">
+      <div><span class="mini-head">01 · Gemba</span><div class="small muted">Capture observations and evidence, not assumptions.</div></div>
+      <div><span class="mini-head">02 · Ishikawa + 5 Whys</span><div class="small muted">Explore competing hypotheses before accepting a root cause.</div></div>
+      <div><span class="mini-head">03 · PDCA</span><div class="small muted">Plan a countermeasure, implement, compare and standardize.</div></div>
+    </div>
+  </div>
+</div>
+<div class="card"><div class="section-head"><h2>All investigations</h2><span class="pill">{{ investigations|length }} shown</span></div>
+<table><thead><tr><th>Problem</th><th>Status</th><th>Created</th><th>Last change</th><th></th></tr></thead>
+<tbody>
+{% for case in investigations %}
+<tr><td><strong>{{ case.title }}</strong><div class="small muted">{{ case.problem|slice(0,100) }}</div></td><td><span class="tag">{{ case.status }}</span></td><td>{{ case.created_at }}</td><td>{{ case.updated_at }}</td><td><a class="btn" href="{{ path('novora_kaizen_detail', {id:case.id}) }}">Investigate →</a></td></tr>
+{% else %}<tr><td colspan="5" class="muted">No investigation records.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

@@ -134,6 +134,8 @@ php bin/console kaizen:analyze var/log/prod.log --limit=15
 php bin/console kaizen:analyze var/log/prod.log --max-bytes=4194304
 ~~~
 
+If the configured file is missing, unreadable, empty, or contains no recognized records, the dashboard reports that **no reliable log data is available** instead of implying there are no application failures. Fix the source or configure a supported Monolog file formatter before interpreting the counts.
+
 The command reads a bounded tail, up to 16 MiB, and applies the same best-effort display redaction as the UI. It ignores unknown formats and multiline continuations. If your Monolog sends logs to php://stderr, systemd or a container log driver, configure a readable file source first: the viewer does not automatically retrieve those streams.
 
 ## Lean methodology

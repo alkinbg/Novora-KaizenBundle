@@ -1,6 +1,11 @@
 {% extends '@NovoraKaizen/base.html.twig' %}
 {% block title %}Waste Radar{% endblock %}
 {% block body %}
+{% if not logSourceAvailable %}
+<div class="notice" role="alert">No log data available: the configured Monolog file <code>{{ logPath }}</code> does not exist or is not readable by the PHP process. Check <code>novora_kaizen.log_path</code> and filesystem permissions. The zero counts below do not mean that the application has no errors.</div>
+{% elseif total == 0 %}
+<div class="notice" role="status">No readable Monolog events were found in <code>{{ logPath }}</code>. The file may be empty or its records may use an unsupported format. This is not evidence that the application has no errors.</div>
+{% endif %}
 {% if not storageWritable %}<div class="notice" role="alert">Improvement storage is not writable by the PHP process. Check the configured <code>var/kaizen</code> directory owner and permissions before creating a case. Do not use chmod 777.</div>{% endif %}
 <div class="headline">
   <div>

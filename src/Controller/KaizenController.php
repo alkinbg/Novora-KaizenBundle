@@ -55,7 +55,8 @@ final readonly class KaizenController
     #[Route('', name: 'dashboard', methods: ['GET'])]
     public function dashboard(Request $request): Response
     {
-        $events = $this->reader->read($this->logPath, $this->maxBytes);
+        $logSourceAvailable = is_file($this->logPath) && is_readable($this->logPath);
+        $events = $logSourceAvailable ? $this->reader->read($this->logPath, $this->maxBytes) : [];
         $issues = $this->pareto->analyze($events);
         $correlation = $this->executions->summarize($events);
         $total = count($events);
@@ -136,7 +137,7 @@ final readonly class KaizenController
             'chart' => $chart, 'scope' => $scope, 'family' => $family, 'families' => $familySummary, 'familyOverview' => $familyOverview, 'selectedFamily' => $family === null ? null : $this->families->labels()[$family], 'total' => $total, 'errors' => $problemCount,
             'groups' => count($issues), 'trend' => $trend, 'correlation' => $correlation, 'correlationEnabled' => $this->correlationEnabled,
             'hiddenRoutinePatterns' => $hiddenRoutinePatterns,
-            'logPath' => basename($this->logPath), 'maxBytes' => $this->maxBytes,
+            'logPath' => basename($this->logPath), 'logSourceAvailable' => $logSourceAvailable, 'maxBytes' => $this->maxBytes,
             'investigations' => $this->store->all(), 'storageWritable' => $this->store->isStorageWritable(), 'createToken' => $this->token('create'), 'opportunities' => $opportunities,
         ]);
     }

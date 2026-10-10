@@ -102,6 +102,30 @@ final class ExecutionSeverityFilterTest extends TestCase
         self::assertStringContainsString('[REDACTED]', $html);
     }
 
+    public function testDashboardDistinguishesMissingLogSourceFromNoErrors(): void
+    {
+        $missing = sys_get_temp_dir().'/kaizen_missing_'.bin2hex(random_bytes(8)).'.log';
+        $html = $this->controller($missing)->dashboard(Request::create('/_kaizen'))->getContent();
+
+        self::assertIsString($html);
+        self::assertStringContainsString('No log data available', $html);
+        self::assertStringContainsString('zero counts below do not mean', $html);
+        self::assertStringContainsString('kaizen_missing_', $html);
+
+        $working = $this->controller()->dashboard(Request::create('/_kaizen'))->getContent();
+        self::assertStringNotContainsString('No log data available', $working);
+        self::assertStringNotContainsString('No readable Monolog events were found', $working);
+    }
+
+    public function testDashboardExplainsEmptyOrUnrecognizedLogRecords(): void
+    {
+        file_put_contents($this->file, "not a Monolog record\\n");
+        $html = $this->controller()->dashboard(Request::create('/_kaizen'))->getContent();
+
+        self::assertStringContainsString('No readable Monolog events were found', (string) $html);
+        self::assertStringNotContainsString('No log data available', (string) $html);
+    }
+
     private function line(string $level, string $message): string
     {
         return json_encode([
@@ -116,7 +140,7 @@ final class ExecutionSeverityFilterTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function controller(): KaizenController
+    private function controller(?string $logPath = null): KaizenController
     {
         $loader = new FilesystemLoader();
         $loader->addPath(dirname(__DIR__, 2).'/templates', 'NovoraKaizen');
@@ -140,7 +164,7 @@ final class ExecutionSeverityFilterTest extends TestCase
             new LogRedactor(),
             new InvestigationStore(sys_get_temp_dir().'/unused_kaizen_store'),
             new ChangeVerificationAnalyzer(),
-            $this->file,
+            $logPath ?? $this->file,
             false,
             4_194_304,
         );

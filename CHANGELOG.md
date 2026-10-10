@@ -2,7 +2,9 @@
 
 All notable changes are documented here. Version 1.0.0 is tagged only after public release acceptance checks.
 
-## 1.0.0 — Pending public release
+## 1.0.0 — 2026-10-10
+
+- Dashboard distinguishes a missing or unreadable log file from an empty/unrecognized sample; zero parsed records are never presented as proof of no errors.
 
 **Product promise:** help Symfony maintainers prioritize recurring technical problems, document root-cause investigations, and verify whether a correction made a measurable difference, without external APM infrastructure.
 
